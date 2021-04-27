@@ -66,32 +66,32 @@ function scheduleDataRequests() {
 }
 
 function getAllData() {
-   return $.getJSON("./db-get-all.py")
+   return $.getJSON("./db-get-all.php")
       .then(gotLatestData)
       .fail(gotLatestDataFailed);
 }
 function getRealTimeData() {
-   return $.getJSON("./db-get-real-time-data.py")
+   return $.getJSON("./db-get-real-time-data.php")
       .fail(gotRealTimeDataFailed)
       .then(gotRealTimeData)
       .then(getControllerRealTimeStatus);
 }
 
 function getControllerRealTimeStatus() {
-  return $.getJSON("./api/controller-real-time-status.py")
+  return $.getJSON("./api/controller-real-time-status.php")
      .then(gotRealTimeDataStatus)
      .fail(gotRealTimeDataFailed);
 }
 var statistics = {};
 
 function getStatistics2() {
-  return $.getJSON("./db-get-statistics.py")
+  return $.getJSON("./db-get-statistics.php")
      .then(gotStatistics)
      .fail(gotLatestDataFailed)
      .then(getStatisticsPerMonth);
 }
 function getStatisticsPerMonth() {
-  return $.getJSON("./api/kwh-generated-by-month.py")
+  return $.getJSON("./api/kwh-generated-by-month.php")
      .then(gotStatisticsPerMonth)
      .fail(gotLatestDataFailed);
 }
@@ -134,9 +134,9 @@ function getStatistics() {
   }
 
   return $.when(
-    $.getJSON("./db-get-statistics.py", options.current),
-    $.getJSON("./db-get-statistics.py", options.prior),
-    $.getJSON("./db-get-statistics.py", options.historical)
+    $.getJSON("./db-get-statistics.php", options.current),
+    $.getJSON("./db-get-statistics.php", options.prior),
+    $.getJSON("./db-get-statistics.php", options.historical)
   ).then(function(current, prior, historical) {
     statistics.current = current[0];
     statistics.prior = prior[0];
@@ -1072,10 +1072,10 @@ function updateTemperatureHour() {
   var chart = getChart(".temp-hour", google.visualization.LineChart);
   var data = new google.visualization.DataTable();
   data.addColumn("datetime", "Time of Day");
-  data.addColumn("number", "Battery \xB0F");
-  data.addColumn("number", "Remote Battery \xB0F");
-  data.addColumn("number", "Case \xB0F");
-  data.addColumn("number", "Power Component \xB0F");
+  data.addColumn("number", "Battery " + chargeControllerProtocol.types.temperature.suffix);
+  data.addColumn("number", "Remote Battery " +  chargeControllerProtocol.types.temperature.suffix);
+  data.addColumn("number", "Case " + chargeControllerProtocol.types.temperature.suffix);
+  data.addColumn("number", "Power Component " + chargeControllerProtocol.types.temperature.suffix);
   data.addRows(
     latestData.hour.map(mapHourField("rt_battery_temp", "rt_remote_battery_temp", "rt_case_temp", "rt_power_component_temp"))
   );
@@ -1217,8 +1217,8 @@ function updateBatteryVoltageInfo() {
     ['Under Warning', s.setting_under_volt_warning],
     ['Low Disconnect', s.setting_low_volt_disconnect],
     ['Discharge Limit', s.setting_discharge_limit_volt],
-    [String.fromCodePoint(0x1F50B) + ' Battery', rtd.rt_battery_v],
-    ['Nominal/Rated', rtd.rt_battery_rated_v],
+    [String.fromCodePoint(0x1F50B) + ' Battery', parseFloat(rtd.rt_battery_v)],
+    ['Nominal/Rated', parseFloat(rtd.rt_battery_rated_v)],
   ];
   rows.sort(function(a, b) {
     return b[1] - a[1];
@@ -1595,7 +1595,7 @@ function updateBatteryTempTable() {
     var dataTable = new google.visualization.DataTable();
     dataTable.addColumn("string", "");
     dataTable.addColumn("string", "Name");
-    dataTable.addColumn("number", "\xB0F");
+    dataTable.addColumn("number", chargeControllerProtocol.types.temperature.suffix);
     dataTable.addRows([
       findRow("rt_battery_temp"),
       findRow("rt_remote_battery_temp"),
@@ -1660,6 +1660,7 @@ function updateBatterySocGauge() {
   chart.draw(dataTable, options);
 }
 function fahrenheit(c) {
+	return c;
   return (c * (9/5)) + 32;
 }
 function updateTemperatureBatteryGauge() {
@@ -1668,7 +1669,7 @@ function updateTemperatureBatteryGauge() {
   //var chart = new google.visualization.Gauge(element[0]);
   var dataTable = google.visualization.arrayToDataTable([
     ["Label", "Value"],
-    ["\xB0F", fahrenheit(latestData.controller_real_time_data.rt_battery_temp)]
+    [chargeControllerProtocol.types.temperature.suffix, fahrenheit(latestData.controller_real_time_data.rt_battery_temp)]
   ]);
   var values = [
     fahrenheit(latestData.controller_real_time_data.rt_battery_temp),
@@ -1712,7 +1713,7 @@ function updateTemperatureCaseGauge() {
   //var chart = new google.visualization.Gauge(element[0]);
   var dataTable = google.visualization.arrayToDataTable([
     ["Label", "Value"],
-    ["\xB0F", fahrenheit(latestData.controller_real_time_data.rt_case_temp)]
+    [chargeControllerProtocol.types.temperature.suffix, fahrenheit(latestData.controller_real_time_data.rt_case_temp)]
   ]);
   var values = [
     fahrenheit(latestData.controller_real_time_data.rt_battery_temp),
@@ -1757,7 +1758,7 @@ function updateTemperaturePowerGauge() {
   //var chart = new google.visualization.Gauge(element[0]);
   var dataTable = google.visualization.arrayToDataTable([
     ["Label", "Value"],
-    ["\xB0F", fahrenheit(latestData.controller_real_time_data.rt_power_component_temp)]
+    [chargeControllerProtocol.types.temperature.suffix, fahrenheit(latestData.controller_real_time_data.rt_power_component_temp)]
   ]);
   var values = [
     fahrenheit(latestData.controller_real_time_data.rt_battery_temp),
@@ -1802,7 +1803,7 @@ function updateTemperatureBatteryRemoteGauge() {
   //var chart = new google.visualization.Gauge(element[0]);
   var dataTable = google.visualization.arrayToDataTable([
     ["Label", "Value"],
-    ["\xB0F", fahrenheit(latestData.controller_real_time_data.rt_remote_battery_temp)]
+    [chargeControllerProtocol.types.temperature.suffix, fahrenheit(latestData.controller_real_time_data.rt_remote_battery_temp)]
   ]);
   var values = [
     fahrenheit(latestData.controller_real_time_data.rt_remote_battery_temp),
