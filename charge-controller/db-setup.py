@@ -48,5 +48,13 @@ CREATE TABLE IF NOT EXISTS info (
 );
 """)
 
+with open("sql/_create-tables.sql", mode="r", encoding="utf-8") as f:
+    sql = f.read();
+st_sql = filter(None, sql.split(';'))
+
+for i in st_sql:
+    if len(i.strip()) > 0 :
+        c.execute(i.strip() + ';')
+
 conn.commit()
 c.close()
