@@ -2,7 +2,10 @@
   "types": {
     "default": {
       "multiplier": 0.01,
-      "size": 1
+      "size": 1,
+      "multiplier": 0.01,
+      "uimultiplier": 1,
+      "uioffset": 0
     },
     "multistatus": {
       "multiplier": 1

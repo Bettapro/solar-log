@@ -1,11 +1,28 @@
 #!/usr/bin/python
 import json
 import pymysql
+import sys, os
+
 
 def json_serial(obj):
     return str(obj)
+    
+    
+def find_charge_controller_def(controller_def, field):
+    for define in controller_def:
+        if define["field"] == field :
+            return define
+    return 0
+
+def find_charge_controller_type(controller_def, field):
+    if field in controller_def:
+        return controller_def[field]
+    return 0
+        
 
 result = {"error": "unknown"}
+
+floatDataValues = ["amps", "volts", "watts", "temperature", "percent"]
 
 try:
     with open("charge-controller.json", mode="r", encoding="utf-8") as data:
@@ -32,7 +49,20 @@ try:
             for field in c.description:
                 fields.append(field[0])
             for i in range(len(fields)):
-                rowResult[fields[i]] = row[i]
+                data_def = find_charge_controller_def(chargeController["data"][tableName], fields[i])
+                
+                if ( data_def != 0 and ( "type" in data_def ) and( data_def["type"] in floatDataValues ) ) :
+                    rowResult[fields[i]] = float(row[i])
+                    
+                    type_def = find_charge_controller_type(chargeController["types"], data_def["type"])
+                    
+                    
+                    if ( type_def != 0 and "uimultiplier" in type_def ):
+                        rowResult[fields[i]] = rowResult[fields[i]] * type_def["uimultiplier"]
+                    if ( type_def != 0 and "uioffset" in type_def ):
+                        rowResult[fields[i]] = rowResult[fields[i]] + type_def["uioffset"]
+                else:
+                    rowResult[fields[i]] = row[i]
             result[tableName] = rowResult
 
     # Get a brief history...
@@ -64,14 +94,20 @@ try:
         "rt_load_a",
         "rt_load_w"
     ]
-    for row in c:
+    for rowObj in c:
+        row = list(rowObj)
+        for i in range(len(row)):
+            field_def = find_charge_controller_def(chargeController["data"]["controller_real_time_data"], result["hour_fields"][i])
+            if ( field_def != 0 and ( "type" in field_def ) and( field_def["type"] in floatDataValues ) ) :
+                row[i] = float(row[i])
         result["hour"].append(row)
 
 
     conn.commit()
     c.close()
 except Exception as e:
-    result = {"error": str(e), "type": type(e)}
+    exception_type, exception_object, exception_traceback = sys.exc_info()
+    result = {"error": str(e), "type": type(e), "trace" : exception_traceback.tb_lineno}
 
 print("Content-Type: application/json")
 print()
